@@ -23,3 +23,6 @@ html,body,#app{
   display: flex;
   align-items: center;
 }
+.el-cascader-panel{
+  height: 300px;
+}
