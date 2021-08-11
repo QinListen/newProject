@@ -11,7 +11,7 @@
       <!-- 添加角色 -->
       <el-row>
         <el-col>
-          <el-button type="primary" @click="addJsForm = true"
+          <el-button type="primary" @click="addRoles = true"
             >添加角色</el-button
           >
         </el-col>
@@ -74,17 +74,25 @@
       <el-table-column label="角色描述" prop="roleDesc"></el-table-column>
       <el-table-column label="操作" width="300px">
         <template slot-scope="scope">
-          <el-button type="primary" icon="el-icon-edit" size="mini"
+          <el-button
+            type="primary"
+            icon="el-icon-edit"
+            size="mini"
+            @click="showRoles"
             >编辑</el-button
           >
-          <el-button type="danger" icon="el-icon-delete" size="mini"
+          <el-button
+            type="danger"
+            icon="el-icon-delete"
+            size="mini"
+            @click="delClick(scope.row.id)"
             >删除</el-button
           >
           <el-button
             type="warning"
             icon="el-icon-setting"
             size="mini"
-            @click="showSetRightDialog(scope.row)"
+            @click="showSetRightDialog(scope.row.id)"
             >分配权限</el-button
           >
         </template>
@@ -97,17 +105,18 @@
       :visible.sync="addJsForm"
       width="30%"
       ref="addjsForms"
+      @close="addDialogClosed"
     >
       <!-- 内容主体 -->
-      <el-form :model="jsList" ref="addjss" label-width="70px">
+      <el-form :model="addList" ref="addjss" label-width="70px">
         <el-form-item label="角色ID" prop="roleId">
-          <el-input v-model="jsList.roleId"></el-input>
+          <el-input v-model="addList.roleId"></el-input>
         </el-form-item>
         <el-form-item label="角色名称" prop="roleName">
-          <el-input v-model="jsList.roleName"></el-input>
+          <el-input v-model="addList.roleName"></el-input>
         </el-form-item>
         <el-form-item label="角色描述" prop="roleDesc">
-          <el-input v-model="jsList.roleName"></el-input>
+          <el-input v-model="addList.roleName"></el-input>
         </el-form-item>
       </el-form>
       <!-- 底部按钮 -->
@@ -148,8 +157,8 @@ export default {
     return {
       //所有角色列表数据
       roleList: [],
-      addJsForm: false,
-      jsList: {
+      addJsForm: true,
+      addList: {
         roleId: "",
         roleName: "",
         roleDesc: "",
@@ -180,11 +189,14 @@ export default {
       this.roleList = res.data;
       this.$message.success("获取用户成功!");
     },
+    addDialogClosed() {
+      this.$refs.addjss.resetFields();
+    },
     addjs() {
-      this.$refs.addjsForms.validate(async (valid) => {
+      this.$refs.addjss.validate(async (valid) => {
         if (!valid) return;
         //发起添加用户的网络请求
-        const { data: res } = await this.$http.post("roles", this.addjs);
+        const { data: res } = await this.$http.post("roles", this.addList);
 
         if (res.meta.status !== 201) {
           this.$message.error("添加用户失败");
@@ -266,6 +278,36 @@ export default {
       this.$message.success("分配权限成功！");
       this.getRolesList();
       this.setRightDialogVisible = false;
+    },
+    // 编辑角色
+    showRoles() {},
+    // 点击删除角色
+    async delClick(id) {
+      //询问用户是否删除
+      const confirmResult = await this.$confirm(
+        "此操作将永久删除该用户, 是否继续?",
+        "提示",
+        {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        }
+      ).catch((err) => {
+        return err;
+      });
+
+      // 如果用户确认删除，则返回值为字符串 confirm
+      // 如果用户取消了删除，则返回值为字符串 cancel
+      if (confirmResult !== "confirm") {
+        return this.$message.info("已取消删除");
+      }
+      const { data: res } = await this.$http.delete("roles/" + id);
+
+      if (res.meta.status !== 201) {
+        this.$message.error("删除用户失败");
+      }
+      this.$message.success("删除用户成功");
+      this.getRolesList();
     },
   },
 };
